@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>لوحة 8×8 مع حساب الجُمّل والثوابت</title>
+<style>
+:root{
+  --bg:#0b0f12; --panel:#071018; --muted:#9aa4ad; --accent:#e74c3c;
+  --cell-size:80px; /* default - can be changed by slider */
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; background:var(--bg); color:#fff;
+  font-family: "Noto Naskh Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+  display:flex; flex-direction:column; gap:12px; align-items:center; padding:16px;
+}
+.header{
+  width:100%; max-width:1200px; display:flex; gap:12px; align-items:center; justify-content:space-between;
+}
+.title{font-size:20px; font-weight:800}
+.controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+input[type="text"], textarea{
+  background:#071018; border:1px solid #122028; color:#fff; padding:8px; border-radius:8px; direction:rtl;
+}
+textarea{width:520px; min-height:80px; resize:vertical}
+.btn{padding:8px 12px; border-radius:8px; border:none; cursor:pointer; font-weight:700}
+.btn-main{background:var(--accent); color:#fff}
+.btn-ghost{background:transparent; border:1px solid #233; color:var(--muted)}
+.btn-spectrum{background:linear-gradient(90deg,#e74c3c,#f39c12,#f1c40f,#2ecc71,#1abc9c,#3498db,#9b59b6); color:#000}
+
+.wrapper{width:100%; max-width:1200px; display:flex; gap:16px; align-items:flex-start; justify-content:center; flex-wrap:wrap}
+.board-wrap{display:flex; flex-direction:column; gap:10px; align-items:center}
+.grid{
+  display:grid;
+  grid-template-columns: repeat(8, var(--cell-size));
+  grid-template-rows: repeat(8, var(--cell-size));
+  gap:6px;
+  background:transparent;
+  padding:6px;
+  border-radius:12px;
+}
+.cell{
+  position:relative;
+  display:flex; align-items:center; justify-content:center; text-align:center; padding:6px;
+  border-radius:8px; overflow:hidden; transition:transform .14s ease, box-shadow .14s;
+  font-weight:700; color:#fff; min-width:var(--cell-size); min-height:var(--cell-size);
+  user-select:none;
+}
+.cell.hidden .word{opacity:0.06; color:transparent}
+.cell.visible .word{opacity:1; color:inherit; transform:translateY(0)}
+.cell .meta-num{
+  position:absolute; top:6px; left:6px; font-size:11px; color:#eee; opacity:0.95; text-align:left;
+  line-height:1;
+}
+.cell .meta-letter{
+  position:absolute; top:22px; left:6px; font-size:12px; color:#eee; opacity:0.95;
+}
+.cell .meta-tower{
+  position:absolute; top:6px; right:6px; font-size:11px; color:#eee; opacity:0.95;
+}
+.cell .word{
+  font-size:18px; padding:2px 4px; transition:all .12s;
+  display:block;
+  direction:rtl;
+  z-index:2;
+}
+.cell .gematria{
+  position:absolute; bottom:6px; left:6px; right:6px; font-size:12px; color:rgba(255,255,255,0.9);
+  z-index:2;
+}
+/* color classes */
+.c-red{background:#e74c3c;color:#fff;border:3px solid #c43b31}
+.c-black{background:#0b0b0b;color:#fff;border:2px solid #111}
+.c-white{background:#ffffff;color:#000;border:2px solid #ddd}
+.spec-0{background:#FF1744;color:#fff}
+.spec-1{background:#FF9100;color:#000}
+.spec-2{background:#FFD600;color:#000}
+.spec-3{background:#00C853;color:#fff}
+.spec-4{background:#00B0FF;color:#000}
+.spec-5{background:#651FFF;color:#fff}
+.spec-6{background:#D500F9;color:#fff}
+
+/* chess colors default (will be applied inline) */
+.small-note{font-size:11px; color:var(--muted)}
+.sidepanel{width:360px; max-width:38vw; display:flex; flex-direction:column; gap:10px}
+.status{padding:10px; background:#081018; border-radius:8px; color:var(--muted)}
+.slider-row{display:flex; gap:8px; align-items:center}
+.footer{font-size:13px; color:var(--muted); text-align:center; margin-top:6px}
+@media(max-width:1000px){
+  .sidepanel{width:100%}
+  textarea{width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="title">لوحة 8×8 مع حساب الجمل الكبير والثوابت</div>
+    <div class="small-note">الترتيب داخل المربعات: من الأعلى للأسفل، وفي كل صف من اليمين إلى الشمال</div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-main" id="btnLoad">تحميل النص</button>
+    <button class="btn btn-ghost" id="btnReset">إعادة ضبط</button>
+    <button class="btn" id="btnRandom">تلوين عشوائي</button>
+    <button class="btn btn-spectrum" id="btnSpectrum">ألوان الطيف</button>
+    <button class="btn" id="btnPrev">الرجوع</button>
+    <button class="btn btn-main" id="btnNext">التالي</button>
+    <button class="btn" id="btnSubmit" style="background:#2ecc71">التقديم</button>
+  </div>
+</div>
+
+<div class="wrapper">
+  <div class="board-wrap">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div class="slider-row">
+        <label class="small-note">حجم الخانة:</label>
+        <input type="range" id="sizeRange" min="40" max="2500" value="80" />
+        <span id="sizeValue" class="small-note">80px</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <label class="small-note">وضع الكشف:</label>
+        <select id="mode">
+          <option value="hover">كشف بالحركة</option>
+          <option value="click">كشف بالنقر</option>
+          <option value="manual">يدوي (التالي/الرجوع)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid" id="grid" aria-label="لوحة 8×8"></div>
+
+    <div style="display:flex; gap:10px; align-items:center; margin-top:6px;">
+      <div class="small-note">عند المرور بالفأرة أو التقديم ستُعرض الكلمات بالتتابع</div>
+    </div>
+  </div>
+
+  <div class="sidepanel">
+    <label class="small-note">أدخل النص (كل كلمة مفصولة بمسافة أو سطر):</label>
+    <textarea id="textInput" placeholder="ألصق نصّك هنا..."></textarea>
+
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-main" id="btnLoadFromInput">تحميل من الحقل</button>
+      <button class="btn btn-ghost" id="btnFillDemo">ملأ تجريبي</button>
+    </div>
+
+    <div class="status">
+      <div>مُكشوف: <span id="revealedCount">0</span> / 64</div>
+      <div style="margin-top:6px">الكلمة الحالية: <span id="currentWord">—</span></div>
+      <div style="margin-top:6px" class="small-note">الحروف الأبجدية المعتمدة تحت الرقم: الألف → الباء → التاء ... ثم تعاد كل 28 حرفاً</div>
+      <div style="margin-top:6px" class="small-note">البرج: رقم من 1 إلى 12 يُعاد من جديد بعد 12</div>
+    </div>
+
+    <div style="background:#071018; padding:8px; border-radius:8px;">
+      <div style="font-weight:700; margin-bottom:6px">قائمة ألوان الطيف (مع السر/الحكمة)</div>
+      <div id="rainbowLegend" class="small-note"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">يمكنك تكبير اللوحة حتى 2500px. العناصر الصغيرة (رقم المربع، الحرف الأبجدي، البرج) ثابتة في كل مربع.</div>
+
+<script>
+/* ---------- إعداد البيانات الثابتة ---------- */
+// الحروف الأبجدية العربية (28 حرفاً) بالترتيب المطلوب لأجل التدوير
+const arabicLetters = ["أ","ب","ت","ث","ج","ح","خ","د","ذ","ر","ز","س","ش","ص","ض","ط","ظ","ع","غ","ف","ق","ك","ل","م","ن","هـ","و","ي"];
+
+// قيمة الجُمّل الكبير (أبجد) - خريطة للأحرف إلى قيمها
+const abjadMap = {
+  "ا":1,"أ":1,"إ":1,"آ":1,"ب":2,"ج":3,"د":4,"ه":5,"ة":5,"و":6,"ز":7,"ح":8,"ط":9,
+  "ي":10,"ى":10,"ك":20,"ل":30,"م":40,"ن":50,"س":60,"ع":70,"ف":80,"ص":90,"ق":100,
+  "ر":200,"ش":300,"ت":400,"ث":500,"خ":600,"ذ":700,"ض":800,"ظ":900,"غ":1000
+};
+
+// ألوان الطيف والسر/الحكمة
+const rainbow = [
+  {cls:'spec-0', color:'#FF1744', name:'أحمر', meaning:'القوة والحماس'},
+  {cls:'spec-1', color:'#FF9100', name:'برتقالي', meaning:'الإبداع والطاقة'},
+  {cls:'spec-2', color:'#FFD600', name:'أصفر', meaning:'النور والمعرفة'},
+  {cls:'spec-3', color:'#00C853', name:'أخضر', meaning:'السلام والنمو'},
+  {cls:'spec-4', color:'#00B0FF', name:'أزرق', meaning:'الهدوء والحكمة'},
+  {cls:'spec-5', color:'#651FFF', name:'نيلي', meaning:'الروحانية والتأمل'},
+  {cls:'spec-6', color:'#D500F9', name:'بنفسجي', meaning:'الصفاء والإلهام'}
+];
+
+const baseClasses = ['c-red','c-black','c-white'];
+
+/* ---------- عناصر DOM ---------- */
+const gridEl = document.getElementById('grid');
+const textInput = document.getElementById('textInput');
+const btnLoad = document.getElementById('btnLoad');
+const btnLoadFromInput = document.getElementById('btnLoadFromInput');
+const btnReset = document.getElementById('btnReset');
+const btnRandom = document.getElementById('btnRandom');
+const btnSpectrum = document.getElementById('btnSpectrum');
+const btnPrev = document.getElementById('btnPrev');
+const btnNext = document.getElementById('btnNext');
+const btnSubmit = document.getElementById('btnSubmit');
+const btnFillDemo = document.getElementById('btnFillDemo');
+const revealedCountEl = document.getElementById('revealedCount');
+const currentWordEl = document.getElementById('currentWord');
+const modeSelect = document.getElementById('mode');
+const sizeRange = document.getElementById('sizeRange');
+const sizeValue = document.getElementById('sizeValue');
+const rainbowLegend = document.getElementById('rainbowLegend');
+
+let BOARD = 8, TOTAL = BOARD*BOARD;
+
+/* ---------- حالة التطبيق ---------- */
+let words = Array.from({length:TOTAL}, (_,i)=>''); // كلمات مخصصة لكل مربع (index 0..63 ترتيب الكشف)
+let assignedClass = new Array(TOTAL).fill(null); // class اللون لكل مربع
+let revealed = new Array(TOTAL).fill(false);
+let currentIndex = 0;
+let cells = []; // DOM for each index
+
+/* ---------- وظائف المساعدة ---------- */
+function cleanText(t){
+  // ازالة تشكيل ومسافات زائدة
+  return t.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g,'').trim();
+}
+function splitToWords(text){
+  if(!text) return [];
+  const cleaned = text.replace(/[،!؟.؛,:()\"«»<>—–\-]/g,' ');
+  const parts = cleaned.split(/\s+/).map(s=>s.trim()).filter(Boolean);
+  return parts;
+}
+function computeAbjad(word){
+  // نجمع قيم الحروف حسب abjadMap، ونتجاهل الحروف غير المعروفة
+  let s = cleanText(word).toLowerCase();
+  let total = 0;
+  for(let ch of s){
+    if(abjadMap[ch]) total += abjadMap[ch];
+  }
+  return total;
+}
+
+/* ---------- بناء اللوحة ---------- */
+function buildGrid(){
+  gridEl.innerHTML = '';
+  cells = [];
+  for(let idx=0; idx<TOTAL; idx++){
+    const cell = document.createElement('div');
+    cell.className = 'cell hidden';
+    cell.dataset.index = idx;
+
+    // العناصر الثابتة: رقم، حرف أبجدي، برج
+    const num = document.createElement('div'); num.className='meta-num';
+    num.innerHTML = String(idx+1); // رقم المربع 1..64
+    cell.appendChild(num);
+
+    const letterDiv = document.createElement('div'); letterDiv.className='meta-letter';
+    // حرف حسب idx: نستخدم idx % 28
+    const letter = arabicLetters[idx % arabicLetters.length];
+    letterDiv.innerHTML = letter;
+    cell.appendChild(letterDiv);
+
+    const tower = document.createElement('div'); tower.className='meta-tower';
+    // برج 1..12 متكرر
+    const towerNum = ((idx % 12) + 1);
+    tower.innerHTML = towerNum;
+    cell.appendChild(tower);
+
+    // محتوى الكلمة
+    const wordEl = document.createElement('div'); wordEl.className='word'; wordEl.innerText = words[idx] || '';
+    cell.appendChild(wordEl);
+
+    // حساب الجمل تحت الكلمة
+    const gemEl = document.createElement('div'); gemEl.className='gematria'; gemEl.innerText = words[idx] ? computeAbjad(words[idx]) : '';
+    cell.appendChild(gemEl);
+
+    // أحداث كشف ونقر
+    cell.addEventListener('mouseenter', onCellHover);
+    cell.addEventListener('click', onCellClick);
+
+    gridEl.appendChild(cell);
+    cells.push(cell);
+  }
+  applyChessColors(); // تطبيق التلوين الشطرنجي افتراضياً
+  updateStatus();
+  renderRainbowLegend();
+}
+
+/* ---------- ألوان الشطرنج الأساسية ---------- */
+function applyChessColors(){
+  // alternate black/white - بحيث تكون الخانة (row+col)%2 logic
+  for(let idx=0; idx<TOTAL; idx++){
+    const {r,c} = indexToRC(idx);
+    const even = ((r + c) % 2 === 0);
+    const base = even ? 'c-black' : 'c-white';
+    assignedClass[idx] = base;
+    cells[idx].className = 'cell hidden ' + base;
+    // اعادة ضبط محتوى كلمة وgematria
+    cells[idx].querySelector('.word').innerText = words[idx] || '';
+    cells[idx].querySelector('.gematria').innerText = words[idx] ? computeAbjad(words[idx]) : '';
+  }
+}
+
+/* ---------- تحويل بين index و row/col (ترتيب الكشف المطلوب) ---------- */
+function indexToRC(idx){
+  // idx 0..63 mapped row = floor(idx/8) ; col = 7 - (idx % 8)  (لترتيب: صف من اليمين لليسار)
+  const row = Math.floor(idx / BOARD);
+  const col = BOARD - 1 - (idx % BOARD);
+  return {r:row, c:col};
+}
+function rcToIndex(row,col){
+  return row * BOARD + (BOARD - 1 - col);
+}
+
+/* ---------- تلوين عشوائي وألوان الطيف ---------- */
+function randomColoring(){
+  for(let i=0;i<TOTAL;i++){
+    const cls = baseClasses[Math.floor(Math.random()*baseClasses.length)];
+    assignedClass[i] = cls;
+    cells[i].className = 'cell hidden ' + cls;
+  }
+}
+function rainbowColoring(){
+  for(let i=0;i<TOTAL;i++){
+    const obj = rainbow[i % rainbow.length];
+    // استخدم class spec-* أو نعين لون الخلفية مباشرة
+    cells[i].className = 'cell hidden ' + obj.cls;
+    assignedClass[i] = obj.cls;
+  }
+}
+
+/* ---------- كشف/إخفاء ---------- */
+function revealIndex(i){
+  if(i<0||i>=TOTAL) return;
+  if(!revealed[i]){
+    revealed[i] = true;
+    cells[i].classList.remove('hidden'); cells[i].classList.add('visible');
+    // ضع نص الكلمة والـ gematria
+    cells[i].querySelector('.word').innerText = words[i] || '';
+    cells[i].querySelector('.gematria').innerText = words[i] ? computeAbjad(words[i]) : '';
+    updateStatus();
+  }
+}
+function hideIndex(i){
+  if(i<0||i>=TOTAL) return;
+  if(revealed[i]){
+    revealed[i] = false;
+    cells[i].classList.remove('visible'); cells[i].classList.add('hidden');
+    updateStatus();
+  }
+}
+function revealNext(){
+  if(currentIndex >= TOTAL) return;
+  revealIndex(currentIndex);
+  currentIndex++;
+}
+function revealPrev(){
+  if(currentIndex <= 0) return;
+  currentIndex--;
+  hideIndex(currentIndex);
+}
+
+/* ---------- تفاعلات الفأرة والنقر ---------- */
+let lastRevealTime = 0, throttle = 80;
+function onCellHover(e){
+  if(modeSelect.value !== 'hover') return;
+  const now = Date.now();
+  if(now - lastRevealTime < throttle) return;
+  lastRevealTime = now;
+  revealNext();
+}
+function onCellClick(e){
+  if(modeSelect.value !== 'click') return;
+  const idx = Number(this.dataset ? this.dataset.index : e.currentTarget.dataset.index);
+  revealIndex(idx);
+  if(idx >= currentIndex) currentIndex = idx + 1;
+}
+
+/* ---------- تحميل النص وتقسيم الكلمات ---------- */
+function loadWordsFromField(){
+  const raw = textInput.value.trim();
+  const arr = splitToWords(raw);
+  // نملأ المصفوفة بحد أقصى 64 عن طريق وضع أول 64 كلمة أو ملأ الفراغات بما تبقى
+  for(let i=0;i<TOTAL;i++){
+    words[i] = arr[i] || '';
+    revealed[i] = false;
+  }
+  currentIndex = 0;
+  // تحديث نصوص المربعات
+  for(let i=0;i<TOTAL;i++){
+    cells[i].querySelector('.word').innerText = words[i] || '';
+    cells[i].querySelector('.gematria').innerText = words[i] ? computeAbjad(words[i]) : '';
+  }
+  applyChessColors();
+  updateStatus();
+}
+
+/* ---------- أزرار / مفاتيح ---------- */
+document.getElementById('btnLoadFromInput').addEventListener('click', loadWordsFromField);
+document.getElementById('btnFillDemo').addEventListener('click', ()=>{
+  const sample = Array.from({length:64}, (_,i)=>'كلمة'+(i+1)).join(' ');
+  textInput.value = sample;
+  loadWordsFromField();
+});
+document.getElementById('btnRandom').addEventListener('click', randomColoring);
+document.getElementById('btnSpectrum').addEventListener('click', rainbowColoring);
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  // إعادة تهيئة
+  words = Array.from({length:TOTAL}, ()=>'');
+  assignedClass = new Array(TOTAL).fill(null);
+  revealed = new Array(TOTAL).fill(false);
+  currentIndex = 0;
+  for(let i=0;i<TOTAL;i++){
+    cells[i].className = 'cell hidden';
+    cells[i].querySelector('.word').innerText = '';
+    cells[i].querySelector('.gematria').innerText = '';
+  }
+  applyChessColors();
+  updateStatus();
+});
+document.getElementById('btnNext').addEventListener('click', revealNext);
+document.getElementById('btnPrev').addEventListener('click', revealPrev);
+document.getElementById('btnSubmit').addEventListener('click', ()=>{
+  const done = revealed.filter(Boolean).length === TOTAL;
+  if(!done){
+    alert('لم تكتشف كل الخانات بعد. اكمل أو اضغط التالي حتى تكتمل 64.');
+    return;
+  }
+  // فتح صفحة جديدة تعرض الكلمات مع قيم الجمل
+  const w = window.open('','_blank');
+  const list = words.map((wrd,i)=>`<li>${i+1}. ${escapeHtml(wrd || '')} — ${computeAbjad(wrd || '')}</li>`).join('');
+  w.document.write(`<html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>نتيجة اللوحة</title>
+    <style>body{font-family:Tahoma,Arial;color:#000;background:#fff;padding:18px}</style></head><body>
+    <h2 style="text-align:center">قائمة الكلمات وقيم الجُمّل الكبير</h2><ol>${list}</ol></body></html>`);
+  w.document.close();
+});
+document.getElementById('btnLoad').addEventListener('click', ()=>{
+  // تحميل النص الموجود في الحقل الرئيسي (مكرر وظيفة زر التحميل في الأعلى)
+  loadWordsFromField();
+});
+
+/* ---------- أزرار لوحة المفاتيح للتنقل ---------- */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowRight' || e.key === 'ArrowUp') revealNext();
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowDown') revealPrev();
+});
+
+/* ---------- تغيير حجم الخانة عبر السلايدر ---------- */
+sizeRange.addEventListener('input', (e)=>{
+  const v = e.target.value;
+  document.documentElement.style.setProperty('--cell-size', v + 'px');
+  sizeValue.innerText = v + 'px';
+});
+
+/* ---------- مساعدة ---------- */
+function updateStatus(){
+  revealedCountEl.innerText = revealed.filter(Boolean).length;
+  currentWordEl.innerText = words[Math.min(currentIndex, TOTAL-1)] || '—';
+}
+/* هروب HTML */
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- عرض اسطورة ألوان الطيف ---------- */
+function renderRainbowLegend(){
+  rainbowLegend.innerHTML = rainbow.map(r=>`<div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
+    <div style="width:18px;height:12px;background:${r.color};border-radius:3px"></div>
+    <div style="font-size:13px;color:#fff">${r.name} — <span style="color:var(--muted)">${r.meaning}</span></div>
+  </div>`).join('');
+}
+
+/* ---------- تهيئة أولية ---------- */
+(function init(){
+  buildGrid();
+  // تحميل افتراضي (يمكن الضغط لملأ النص)
+  sizeValue.innerText = sizeRange.value + 'px';
+  renderRainbowLegend();
+})();
+</script>
+
+</body>
+</html>
