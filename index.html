@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>لوحة 8×8 مع حساب الجُمّل والثوابت</title>
+<title>لوحة 8×8 مع المنازل القمرية</title>
 <style>
 :root{
   --bg:#0b0f12; --panel:#071018; --muted:#9aa4ad; --accent:#e74c3c;
@@ -14,6 +14,7 @@ body{
   margin:0; min-height:100vh; background:var(--bg); color:#fff;
   font-family: "Noto Naskh Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
   display:flex; flex-direction:column; gap:12px; align-items:center; padding:16px;
+  overflow-x: hidden;
 }
 .header{
   width:100%; max-width:1200px; display:flex; gap:12px; align-items:center; justify-content:space-between;
@@ -30,7 +31,7 @@ textarea{width:520px; min-height:80px; resize:vertical}
 .btn-spectrum{background:linear-gradient(90deg,#e74c3c,#f39c12,#f1c40f,#2ecc71,#1abc9c,#3498db,#9b59b6); color:#000}
 
 .wrapper{width:100%; max-width:1200px; display:flex; gap:16px; align-items:flex-start; justify-content:center; flex-wrap:wrap}
-.board-wrap{display:flex; flex-direction:column; gap:10px; align-items:center}
+.board-wrap{display:flex; flex-direction:column; gap:10px; align-items:center; overflow:visible; padding:20px}
 .grid{
   display:grid;
   grid-template-columns: repeat(8, var(--cell-size));
@@ -39,6 +40,9 @@ textarea{width:520px; min-height:80px; resize:vertical}
   background:transparent;
   padding:6px;
   border-radius:12px;
+  transition: transform 0.1s ease, scale 0.1s ease;
+  transform-origin: top left;
+  position: relative;
 }
 .cell{
   position:relative;
@@ -46,6 +50,7 @@ textarea{width:520px; min-height:80px; resize:vertical}
   border-radius:8px; overflow:hidden; transition:transform .14s ease, box-shadow .14s;
   font-weight:700; color:#fff; min-width:var(--cell-size); min-height:var(--cell-size);
   user-select:none;
+  cursor: pointer;
 }
 .cell.hidden .word{opacity:0.06; color:transparent}
 .cell.visible .word{opacity:1; color:inherit; transform:translateY(0)}
@@ -81,15 +86,159 @@ textarea{width:520px; min-height:80px; resize:vertical}
 .spec-5{background:#651FFF;color:#fff}
 .spec-6{background:#D500F9;color:#fff}
 
-/* chess colors default (will be applied inline) */
+/* Zodiac sign colors */
+.zodiac-fire{color:#FFD700}      /* Yellow for fire signs */
+.zodiac-earth{color:#FFFFFF}     /* White for earth signs */
+.zodiac-air{color:#000000}       /* Black for air signs */
+.zodiac-water{color:#1E90FF}     /* Blue for water signs */
+
 .small-note{font-size:11px; color:var(--muted)}
 .sidepanel{width:360px; max-width:38vw; display:flex; flex-direction:column; gap:10px}
 .status{padding:10px; background:#081018; border-radius:8px; color:var(--muted)}
 .slider-row{display:flex; gap:8px; align-items:center}
 .footer{font-size:13px; color:var(--muted); text-align:center; margin-top:6px}
+
+/* Row numbers on the right */
+.row-numbers {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 10;
+}
+.row-numbers div {
+  font-size: 12px;
+  color: #eee;
+  opacity: 0.95;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* نظام المنازل القمرية الـ 28 */
+.house-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.house-container {
+  background: #0b0f12;
+  border-radius: 16px;
+  padding: 30px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 0 30px rgba(231, 76, 60, 0.5);
+  border: 2px solid #e74c3c;
+  position: relative;
+}
+
+.house-header {
+  text-align: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #2c3e50;
+}
+
+.house-header h2 {
+  font-size: 32px;
+  margin: 0;
+  color: #e74c3c;
+}
+
+.house-header .house-number {
+  font-size: 70px;
+  font-weight: bold;
+  color: #e74c3c;
+  margin: 10px 0;
+  line-height: 1;
+}
+
+.house-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.house-info {
+  background: #071018;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.house-info h3 {
+  color: #f39c12;
+  margin-top: 0;
+  border-bottom: 1px solid #34495e;
+  padding-bottom: 10px;
+}
+
+.info-item {
+  margin-bottom: 15px;
+}
+
+.info-item strong {
+  color: #3498db;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.info-item p {
+  margin: 0;
+  color: #ecf0f1;
+  line-height: 1.6;
+}
+
+.close-modal {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+}
+
 @media(max-width:1000px){
   .sidepanel{width:100%}
   textarea{width:100%}
+  .house-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media(max-width:768px){
+  .house-header .house-number {
+    font-size: 50px;
+  }
+  
+  .house-header h2 {
+    font-size: 24px;
+  }
 }
 </style>
 </head>
@@ -97,8 +246,9 @@ textarea{width:520px; min-height:80px; resize:vertical}
 
 <div class="header">
   <div>
-    <div class="title">لوحة 8×8 مع حساب الجمل الكبير والثوابت</div>
+    <div class="title">لوحة 8×8 مع المنازل القمرية الـ 28</div>
     <div class="small-note">الترتيب داخل المربعات: من الأعلى للأسفل، وفي كل صف من اليمين إلى الشمال</div>
+    <div class="small-note">اضغط مرتين على أي مربع لعرض المنزل القمري الخاص به</div>
   </div>
 
   <div class="controls">
@@ -131,6 +281,7 @@ textarea{width:520px; min-height:80px; resize:vertical}
     </div>
 
     <div class="grid" id="grid" aria-label="لوحة 8×8"></div>
+    <div class="row-numbers" id="rowNumbers"></div>
 
     <div style="display:flex; gap:10px; align-items:center; margin-top:6px;">
       <div class="small-note">عند المرور بالفأرة أو التقديم ستُعرض الكلمات بالتتابع</div>
@@ -151,6 +302,7 @@ textarea{width:520px; min-height:80px; resize:vertical}
       <div style="margin-top:6px">الكلمة الحالية: <span id="currentWord">—</span></div>
       <div style="margin-top:6px" class="small-note">الحروف الأبجدية المعتمدة تحت الرقم: الألف → الباء → التاء ... ثم تعاد كل 28 حرفاً</div>
       <div style="margin-top:6px" class="small-note">البرج: رقم من 1 إلى 12 يُعاد من جديد بعد 12</div>
+      <div style="margin-top:6px" class="small-note">اضغط مرتين على أي مربع لعرض المنزل القمري الخاص به</div>
     </div>
 
     <div style="background:#071018; padding:8px; border-radius:8px;">
@@ -161,6 +313,60 @@ textarea{width:520px; min-height:80px; resize:vertical}
 </div>
 
 <div class="footer">يمكنك تكبير اللوحة حتى 2500px. العناصر الصغيرة (رقم المربع، الحرف الأبجدي، البرج) ثابتة في كل مربع.</div>
+
+<!-- نظام المنازل القمرية الـ 28 -->
+<div id="houseModal" class="house-modal" style="display: none;">
+  <div class="house-container">
+    <div class="house-header">
+      <h2 id="modalHouseName">المنزل القمري</h2>
+      <div class="house-number" id="modalHouseNumber">1</div>
+    </div>
+    
+    <div class="house-content">
+      <div class="house-info">
+        <h3>معلومات المنزل</h3>
+        <div class="info-item">
+          <strong>الحرف الأبجدي</strong>
+          <p id="modalHouseLetter">أ</p>
+        </div>
+        <div class="info-item">
+          <strong>البرج الفلكي</strong>
+          <p id="modalHouseZodiac">الحمل (1) - ناري</p>
+        </div>
+        <div class="info-item">
+          <strong>قيمة الجمل</strong>
+          <p id="modalHouseGematria">1</p>
+        </div>
+        <div class="info-item">
+          <strong>عدد الدورات</strong>
+          <p id="modalHouseCycle">1</p>
+        </div>
+      </div>
+      
+      <div class="house-info">
+        <h3>خصائص المنزل</h3>
+        <div class="info-item">
+          <strong>الطاقة</strong>
+          <p id="modalHouseEnergy">عالية، بداية جديدة، طاقة متجددة</p>
+        </div>
+        <div class="info-item">
+          <strong>التأثير</strong>
+          <p id="modalHouseInfluence">يمنح القوة والعزيمة لبدء المشاريع</p>
+        </div>
+        <div class="info-item">
+          <strong>الفوائد</strong>
+          <p id="modalHouseBenefits">التخطيط، البدايات الجديدة، القيادة</p>
+        </div>
+        <div class="info-item">
+          <strong>التحديات</strong>
+          <p id="modalHouseChallenges">الاندفاع الزائد، قلة الصبر</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <button class="close-modal" id="closeHouseModal">&times;</button>
+</div>
 
 <script>
 /* ---------- إعداد البيانات الثابتة ---------- */
@@ -185,10 +391,67 @@ const rainbow = [
   {cls:'spec-6', color:'#D500F9', name:'بنفسجي', meaning:'الصفاء والإلهام'}
 ];
 
+// أسماء الأبراج وعناصرها
+const zodiacSigns = [
+  {name: "الحمل", element: "ناري"},
+  {name: "الثور", element: "ترابي"},
+  {name: "الجوزاء", element: "هوائي"},
+  {name: "السرطان", element: "مائي"},
+  {name: "الأسد", element: "ناري"},
+  {name: "العذراء", element: "ترابي"},
+  {name: "الميزان", element: "هوائي"},
+  {name: "العقرب", element: "مائي"},
+  {name: "القوس", element: "ناري"},
+  {name: "الجدي", element: "ترابي"},
+  {name: "الدلو", element: "هوائي"},
+  {name: "الحوت", element: "مائي"}
+];
+
+// خريطة الألوان حسب العنصر
+const elementColors = {
+  "ناري": "zodiac-fire",
+  "ترابي": "zodiac-earth",
+  "هوائي": "zodiac-air",
+  "مائي": "zodiac-water"
+};
+
+// معلومات المنازل الـ 28
+const housesInfo = [
+  {name: "بيت القوة والنور", energy: "عالية، بداية جديدة، طاقة متجددة", influence: "يمنح القوة والعزيمة لبدء المشاريع", benefits: "التخطيط، البدايات الجديدة، القيادة", challenges: "الاندفاع الزائد، قلة الصبر"},
+  {name: "بيت الحكمة والتوازن", energy: "متوازنة، هادئة، تأملية", influence: "يزيد من الحكمة والتفكير المنطقي", benefits: "التعلم، التخطيط الاستراتيجي، الحكمة", challenges: "المماطلة، الإفراط في التحليل"},
+  {name: "بيت التواصل والإبداع", energy: "إبداعية، تواصلية، اجتماعية", influence: "يعزز القدرة على التواصل والتعبير", benefits: "الإبداع، الكتابة، العلاقات", challenges: "التشتت، كثرة الكلام"},
+  {name: "بيت الاستقرار والأمان", energy: "ثابتة، مريحة، آمنة", influence: "يوفر الاستقرار والأمان النفسي", benefits: "الاستقرار، بناء الأسرة، الأمان", challenges: "الخوف من التغيير، الجمود"},
+  {name: "بيت المغامرة والتغيير", energy: "ديناميكية، مغامرة، تغيير", influence: "يشجع على المغامرة وتجربة الجديد", benefits: "التغيير، السفر، الاكتشاف", challenges: "التهور، عدم الاستقرار"},
+  {name: "بيت العمل والانضباط", energy: "منظمة، عملية، منضبطة", influence: "يعزز الانضباط والإنتاجية", benefits: "العمل، النظام، الإنجاز", challenges: "الإرهاق، الجمود في الروتين"},
+  {name: "بيت العلاقات والشراكات", energy: "اجتماعية، تعاونية، توافقية", influence: "يعزز العلاقات والشراكات الناجحة", benefits: "الزواج، الشراكة، الصداقة", challenges: "التبعية، فقدان الهوية"},
+  {name: "بيت التحول والعمق", energy: "كثيفة، تحولية، عميقة", influence: "يساعد في التحول الشخصي والنمو", benefits: "التحول، الشفاء، العمق النفسي", challenges: "الصدمات، الخوف من التغيير"},
+  {name: "بيت الحكمة والتوسع", energy: "موسعة، مثالية، حكيمة", influence: "يشجع على التوسع الفكري والروحي", benefits: "التعلم العالي، الفلسفة، السفر", challenges: "الانفصال عن الواقع، المثالية المفرطة"},
+  {name: "بيت المسؤولية والطموح", energy: "طموحة، مسؤولة، عملية", influence: "يعزز الطموح والمسؤولية", benefits: "النجاح المهني، الطموح، الإنجاز", challenges: "العمل الزائد، الإهمال العاطفي"},
+  {name: "بيت الابتكار والصداقة", energy: "اجتماعية، مبتكرة، ودودة", influence: "يشجع على الابتكار وتكوين الصداقات", benefits: "الصداقات، الابتكار، العمل الجماعي", challenges: "التشتت، عدم الالتزام"},
+  {name: "بيت الحدس والأحلام", energy: "حدسية، حالمة، روحانية", influence: "يعزز الحدس والتواصل مع الذات الداخلية", benefits: "الأحلام، الحدس، الإبداع", challenges: "الهروب من الواقع، الإفراط في الأحلام"},
+  {name: "بيت الانتهاء والتحول", energy: "تحولية، نهائية، متجددة", influence: "يساعد في إنهاء الدورات والتحول", benefits: "التحول، النهايات، التجديد", challenges: "المقاومة للتغيير، الخوف من المجهول"},
+  {name: "بيت التوازن والانسجام", energy: "متوازنة، متناغمة، سلمية", influence: "يحقق التوازن والانسجام الداخلي", benefits: "السلام الداخلي، التوازن، الانسجام", challenges: "الخمول، عدم الحسم"},
+  {name: "بيت التحدي والنمو", energy: "تحدية، نمو، قوة", influence: "يشجع على مواجهة التحديات والنمو", benefits: "الصمود، القوة، التطور", challenges: "الصراعات، الضغط النفسي"},
+  {name: "بيت الإبداع والفرح", energy: "مبهجة، إبداعية، خفيفة", influence: "يعزز الإبداع والفرح الداخلي", benefits: "الإبداع، الفرح، التعبير الفني", challenges: "السطحية، عدم الجدية"},
+  {name: "بيت المعرفة والحقيقة", energy: "ذهنية، تحليلية، صادقة", influence: "يزيد من البحث عن المعرفة والحقيقة", benefits: "التعلم، البحث، الحكمة", challenges: "الشك المفرط، الجمود الفكري"},
+  {name: "بيت التغيير والتحرر", energy: "تحررية، تغيير، حرية", influence: "يساعد في التحرر من القيود", benefits: "الحرية، التغيير، التحرر", challenges: "الفوضى، عدم الاستقرار"},
+  {name: "بيت القيادة والسلطة", energy: "قيادية، سلطوية، قوية", influence: "يعزز القيادة والقدرة على التأثير", benefits: "القيادة، السلطة، التأثير", challenges: "التسلط، الغرور"},
+  {name: "بيت الحكمة العميقة", energy: "عميقة، حكيمة، تأملية", influence: "يزيد من الحكمة العميقة والفهم", benefits: "الحكمة، الفهم العميق، التأمل", challenges: "الانعزال، الجمود"},
+  {name: "بيت التعبير والإلهام", energy: "إلهامية، تعبيرية، فنية", influence: "يعزز التعبير الفني والإلهام", benefits: "الفن، الإلهام، التعبير", challenges: "التقلب المزاجي، الحساسية المفرطة"},
+  {name: "بيت العمل الجماعي", energy: "جماعية، تعاونية، توافقية", influence: "يشجع على العمل الجماعي والتعاون", benefits: "التعاون، العمل الجماعي، الدعم", challenges: "فقدان الهوية الفردية"},
+  {name: "بيت الابتكار والتجديد", energy: "مبتكرة، تجديدية، متطورة", influence: "يعزز الابتكار والتجديد", benefits: "الابتكار، التجديد، التطوير", challenges: "التسرع، عدم الاكتمال"},
+  {name: "بيت الحماية والرعاية", energy: "حامية، راعية، داعمة", influence: "يوفر الحماية والرعاية", benefits: "الحماية، الرعاية، الدعم", challenges: "التبعية، الخوف من الاستقلال"},
+  {name: "بيت المعرفة الكونية", energy: "كونية، شمولية، حكيمة", influence: "يزيد من الفهم الكوني والحكمة", benefits: "الحكمة الكونية، الفهم الشمولي", challenges: "الانفصال عن الواقع الأرضي"},
+  {name: "بيت التحول الروحي", energy: "روحانية، تحولية، عميقة", influence: "يساعد في التحول الروحي", benefits: "النمو الروحي، التحول الداخلي", challenges: "الهروب من المسؤوليات"},
+  {name: "بيت الإرادة والتنفيذ", energy: "قوية، منفذة، حاسمة", influence: "يعزز الإرادة والقدرة على التنفيذ", benefits: "الإرادة، التنفيذ، الإنجاز", challenges: "التصلب، عدم المرونة"},
+  {name: "بيت الإكمال والدورة", energy: "كاملة، دائرية، نهائية", influence: "يختتم الدورة ويعد لبداية جديدة", benefits: "الإكمال، الختام، الاستعداد للجديد", challenges: "التشبث بالماضي، الخوف من البدايات"}
+];
+
 const baseClasses = ['c-red','c-black','c-white'];
 
 /* ---------- عناصر DOM ---------- */
 const gridEl = document.getElementById('grid');
+const rowNumbersEl = document.getElementById('rowNumbers');
 const textInput = document.getElementById('textInput');
 const btnLoad = document.getElementById('btnLoad');
 const btnLoadFromInput = document.getElementById('btnLoadFromInput');
@@ -205,6 +468,18 @@ const modeSelect = document.getElementById('mode');
 const sizeRange = document.getElementById('sizeRange');
 const sizeValue = document.getElementById('sizeValue');
 const rainbowLegend = document.getElementById('rainbowLegend');
+const houseModal = document.getElementById('houseModal');
+const modalHouseName = document.getElementById('modalHouseName');
+const modalHouseNumber = document.getElementById('modalHouseNumber');
+const modalHouseLetter = document.getElementById('modalHouseLetter');
+const modalHouseZodiac = document.getElementById('modalHouseZodiac');
+const modalHouseGematria = document.getElementById('modalHouseGematria');
+const modalHouseCycle = document.getElementById('modalHouseCycle');
+const modalHouseEnergy = document.getElementById('modalHouseEnergy');
+const modalHouseInfluence = document.getElementById('modalHouseInfluence');
+const modalHouseBenefits = document.getElementById('modalHouseBenefits');
+const modalHouseChallenges = document.getElementById('modalHouseChallenges');
+const closeHouseModal = document.getElementById('closeHouseModal');
 
 let BOARD = 8, TOTAL = BOARD*BOARD;
 
@@ -215,9 +490,12 @@ let revealed = new Array(TOTAL).fill(false);
 let currentIndex = 0;
 let cells = []; // DOM for each index
 
+// حالة نظام المنازل الـ 28
+let currentHouse = 0;
+let houseCycleCount = 1;
+
 /* ---------- وظائف المساعدة ---------- */
 function cleanText(t){
-  // ازالة تشكيل ومسافات زائدة
   return t.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g,'').trim();
 }
 function splitToWords(text){
@@ -227,7 +505,6 @@ function splitToWords(text){
   return parts;
 }
 function computeAbjad(word){
-  // نجمع قيم الحروف حسب abjadMap، ونتجاهل الحروف غير المعروفة
   let s = cleanText(word).toLowerCase();
   let total = 0;
   for(let ch of s){
@@ -244,6 +521,7 @@ function buildGrid(){
     const cell = document.createElement('div');
     cell.className = 'cell hidden';
     cell.dataset.index = idx;
+    cell.dataset.house = idx % 28; // إضافة خاصية المنزل
 
     // العناصر الثابتة: رقم، حرف أبجدي، برج
     const num = document.createElement('div'); num.className='meta-num';
@@ -251,15 +529,15 @@ function buildGrid(){
     cell.appendChild(num);
 
     const letterDiv = document.createElement('div'); letterDiv.className='meta-letter';
-    // حرف حسب idx: نستخدم idx % 28
     const letter = arabicLetters[idx % arabicLetters.length];
     letterDiv.innerHTML = letter;
     cell.appendChild(letterDiv);
 
     const tower = document.createElement('div'); tower.className='meta-tower';
-    // برج 1..12 متكرر
-    const towerNum = ((idx % 12) + 1);
-    tower.innerHTML = towerNum;
+    const towerIdx = (idx % 12);
+    const sign = zodiacSigns[towerIdx];
+    const elementClass = elementColors[sign.element];
+    tower.innerHTML = `<span class="${elementClass}">${sign.name} (${towerIdx + 1})</span>`;
     cell.appendChild(tower);
 
     // محتوى الكلمة
@@ -273,33 +551,43 @@ function buildGrid(){
     // أحداث كشف ونقر
     cell.addEventListener('mouseenter', onCellHover);
     cell.addEventListener('click', onCellClick);
+    
+    // حدث الضغط المزدوج لعرض المنزل القمري
+    cell.addEventListener('dblclick', onCellDoubleClick);
 
     gridEl.appendChild(cell);
     cells.push(cell);
   }
   applyChessColors(); // تطبيق التلوين الشطرنجي افتراضياً
   updateStatus();
+  buildRowNumbers();
   renderRainbowLegend();
+}
+
+function buildRowNumbers() {
+  rowNumbersEl.innerHTML = '';
+  for (let i = 1; i <= BOARD; i++) {
+    const div = document.createElement('div');
+    div.textContent = i;
+    rowNumbersEl.appendChild(div);
+  }
 }
 
 /* ---------- ألوان الشطرنج الأساسية ---------- */
 function applyChessColors(){
-  // alternate black/white - بحيث تكون الخانة (row+col)%2 logic
   for(let idx=0; idx<TOTAL; idx++){
     const {r,c} = indexToRC(idx);
     const even = ((r + c) % 2 === 0);
     const base = even ? 'c-black' : 'c-white';
     assignedClass[idx] = base;
     cells[idx].className = 'cell hidden ' + base;
-    // اعادة ضبط محتوى كلمة وgematria
     cells[idx].querySelector('.word').innerText = words[idx] || '';
     cells[idx].querySelector('.gematria').innerText = words[idx] ? computeAbjad(words[idx]) : '';
   }
 }
 
-/* ---------- تحويل بين index و row/col (ترتيب الكشف المطلوب) ---------- */
+/* ---------- تحويل بين index و row/col ---------- */
 function indexToRC(idx){
-  // idx 0..63 mapped row = floor(idx/8) ; col = 7 - (idx % 8)  (لترتيب: صف من اليمين لليسار)
   const row = Math.floor(idx / BOARD);
   const col = BOARD - 1 - (idx % BOARD);
   return {r:row, c:col};
@@ -319,7 +607,6 @@ function randomColoring(){
 function rainbowColoring(){
   for(let i=0;i<TOTAL;i++){
     const obj = rainbow[i % rainbow.length];
-    // استخدم class spec-* أو نعين لون الخلفية مباشرة
     cells[i].className = 'cell hidden ' + obj.cls;
     assignedClass[i] = obj.cls;
   }
@@ -331,7 +618,6 @@ function revealIndex(i){
   if(!revealed[i]){
     revealed[i] = true;
     cells[i].classList.remove('hidden'); cells[i].classList.add('visible');
-    // ضع نص الكلمة والـ gematria
     cells[i].querySelector('.word').innerText = words[i] || '';
     cells[i].querySelector('.gematria').innerText = words[i] ? computeAbjad(words[i]) : '';
     updateStatus();
@@ -372,17 +658,44 @@ function onCellClick(e){
   if(idx >= currentIndex) currentIndex = idx + 1;
 }
 
+/* ---------- عرض المنزل القمري عند الضغط المزدوج ---------- */
+function onCellDoubleClick(e) {
+  const idx = Number(this.dataset.index);
+  const houseIndex = parseInt(this.dataset.house);
+  
+  // تحديث معلومات المنزل في النافذة المنبثقة
+  const info = housesInfo[houseIndex];
+  const letter = arabicLetters[houseIndex];
+  const zodiacIndex = houseIndex % 12;
+  const zodiac = zodiacSigns[zodiacIndex];
+  const elementClass = elementColors[zodiac.element];
+  const gematria = abjadMap[letter] || (houseIndex + 1);
+  houseCycleCount = Math.floor(houseIndex / 28) + 1;
+  
+  modalHouseName.textContent = `${houseIndex + 1}. ${info.name}`;
+  modalHouseNumber.textContent = houseIndex + 1;
+  modalHouseLetter.textContent = letter;
+  modalHouseZodiac.innerHTML = `${zodiac.name} (${zodiacIndex + 1}) - <span class="${elementClass}">${zodiac.element}</span>`;
+  modalHouseGematria.textContent = gematria;
+  modalHouseCycle.textContent = houseCycleCount;
+  modalHouseEnergy.textContent = info.energy;
+  modalHouseInfluence.textContent = info.influence;
+  modalHouseBenefits.textContent = info.benefits;
+  modalHouseChallenges.textContent = info.challenges;
+  
+  // عرض النافذة المنبثقة
+  houseModal.style.display = "flex";
+}
+
 /* ---------- تحميل النص وتقسيم الكلمات ---------- */
 function loadWordsFromField(){
   const raw = textInput.value.trim();
   const arr = splitToWords(raw);
-  // نملأ المصفوفة بحد أقصى 64 عن طريق وضع أول 64 كلمة أو ملأ الفراغات بما تبقى
   for(let i=0;i<TOTAL;i++){
     words[i] = arr[i] || '';
     revealed[i] = false;
   }
   currentIndex = 0;
-  // تحديث نصوص المربعات
   for(let i=0;i<TOTAL;i++){
     cells[i].querySelector('.word').innerText = words[i] || '';
     cells[i].querySelector('.gematria').innerText = words[i] ? computeAbjad(words[i]) : '';
@@ -401,7 +714,6 @@ document.getElementById('btnFillDemo').addEventListener('click', ()=>{
 document.getElementById('btnRandom').addEventListener('click', randomColoring);
 document.getElementById('btnSpectrum').addEventListener('click', rainbowColoring);
 document.getElementById('btnReset').addEventListener('click', ()=>{
-  // إعادة تهيئة
   words = Array.from({length:TOTAL}, ()=>'');
   assignedClass = new Array(TOTAL).fill(null);
   revealed = new Array(TOTAL).fill(false);
@@ -422,7 +734,6 @@ document.getElementById('btnSubmit').addEventListener('click', ()=>{
     alert('لم تكتشف كل الخانات بعد. اكمل أو اضغط التالي حتى تكتمل 64.');
     return;
   }
-  // فتح صفحة جديدة تعرض الكلمات مع قيم الجمل
   const w = window.open('','_blank');
   const list = words.map((wrd,i)=>`<li>${i+1}. ${escapeHtml(wrd || '')} — ${computeAbjad(wrd || '')}</li>`).join('');
   w.document.write(`<html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>نتيجة اللوحة</title>
@@ -430,15 +741,60 @@ document.getElementById('btnSubmit').addEventListener('click', ()=>{
     <h2 style="text-align:center">قائمة الكلمات وقيم الجُمّل الكبير</h2><ol>${list}</ol></body></html>`);
   w.document.close();
 });
-document.getElementById('btnLoad').addEventListener('click', ()=>{
-  // تحميل النص الموجود في الحقل الرئيسي (مكرر وظيفة زر التحميل في الأعلى)
-  loadWordsFromField();
+document.getElementById('btnLoad').addEventListener('click', loadWordsFromField);
+
+/* ---------- التحكم بالماوس والأسهم للتكبير والتصغير ---------- */
+let isDragging = false;
+let startX, startY, startTransformX = 0, startTransformY = 0;
+
+gridEl.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return; // Only left click
+  isDragging = true;
+  startX = e.clientX;
+  startY = e.clientY;
+  const transform = window.getComputedStyle(gridEl).transform;
+  if (transform !== 'none') {
+    const values = transform.split('(')[1].split(')')[0].split(',');
+    startTransformX = parseFloat(values[4]);
+    startTransformY = parseFloat(values[5]);
+  }
 });
 
-/* ---------- أزرار لوحة المفاتيح للتنقل ---------- */
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'ArrowRight' || e.key === 'ArrowUp') revealNext();
-  if(e.key === 'ArrowLeft' || e.key === 'ArrowDown') revealPrev();
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+  gridEl.style.transform = `translate(${startTransformX + dx}px, ${startTransformY + dy}px)`;
+});
+
+document.addEventListener('mouseup', () => {
+  isDragging = false;
+});
+
+document.addEventListener('mouseleave', () => {
+  isDragging = false;
+});
+
+function changeCellSize(delta) {
+  let current = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
+  let next = Math.min(2500, Math.max(40, current + delta));
+  document.documentElement.style.setProperty('--cell-size', next + 'px');
+  sizeRange.value = next;
+  sizeValue.innerText = next + 'px';
+}
+
+gridEl.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  let step = e.deltaY < 0 ? 5 : -5; // Zoom in when scrolling up
+  changeCellSize(step);
+}, { passive: false });
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') {
+    changeCellSize(5);
+  } else if (e.key === 'ArrowDown') {
+    changeCellSize(-5);
+  }
 });
 
 /* ---------- تغيير حجم الخانة عبر السلايدر ---------- */
@@ -453,7 +809,6 @@ function updateStatus(){
   revealedCountEl.innerText = revealed.filter(Boolean).length;
   currentWordEl.innerText = words[Math.min(currentIndex, TOTAL-1)] || '—';
 }
-/* هروب HTML */
 function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ---------- عرض اسطورة ألوان الطيف ---------- */
@@ -467,9 +822,20 @@ function renderRainbowLegend(){
 /* ---------- تهيئة أولية ---------- */
 (function init(){
   buildGrid();
-  // تحميل افتراضي (يمكن الضغط لملأ النص)
   sizeValue.innerText = sizeRange.value + 'px';
   renderRainbowLegend();
+  
+  // إغلاق نافذة المنازل عند الضغط على الزر
+  closeHouseModal.addEventListener('click', () => {
+    houseModal.style.display = "none";
+  });
+  
+  // إغلاق نافذة المنازل عند الضغط خارجها
+  window.addEventListener('click', (e) => {
+    if (e.target === houseModal) {
+      houseModal.style.display = "none";
+    }
+  });
 })();
 </script>
 
